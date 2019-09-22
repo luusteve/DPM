@@ -90,36 +90,32 @@ public class Odometer implements Runnable {
 
   /**
    * This method is where the logic for the odometer will run.
+   * 
+   * @author Steven Luu
    */
   public void run() {
-    double d1, d2, deltaT, displacement, lastTachoL, lastTachoR, dx, dy;
+    double d1, d2, deltaT, angle, displacement, lastTachoL, lastTachoR, dx, dy;
     lastTachoL = 0;
     lastTachoR = 0;
+    angle = odo.getXYT()[2] * Math.PI / 180;
     long updateStart, updateEnd;
     while (true) {
       updateStart = System.currentTimeMillis();
 
       leftMotorTachoCount = leftMotor.getTachoCount();
       rightMotorTachoCount = rightMotor.getTachoCount();
-      // updateEnddouble d1 = (WHEEL_RAD * Math.PI *);
-      // TODO Calculate new robot position based on tachometer counts
       d1 = (WHEEL_RAD * Math.PI * (leftMotorTachoCount - lastTachoL)) / 180;
       d2 = (WHEEL_RAD * Math.PI * (rightMotorTachoCount - lastTachoR)) / 180;
       lastTachoL = leftMotorTachoCount;
       lastTachoR = rightMotorTachoCount;
       displacement = (d1 + d2) * 0.5;
-      deltaT = ((d1 - d2) / TRACK) * 90 / Math.PI;
-      theta += deltaT;
-      dx = displacement * Math.sin(theta * Math.PI / 180);
-      dy = displacement * Math.cos(theta * Math.PI / 180);
-      /*
-       * odo.update(this.getXYT()[0] + displacement * Math.sin(thetaHead), this.getXYT()[1] + displacement *
-       * Math.cos(thetaHead), thetaHead);
-       */
-      odo.update(dx, dy, deltaT);
-      // TODO Update odometer values with new calculated values, eg
-      // odo.update(dx, dy, dtheta);
-
+      deltaT = ((d1 - d2) / TRACK);
+      angle += deltaT;
+      dx = displacement * Math.sin(angle);
+      dy = displacement * Math.cos(angle);
+     
+      odo.update(dx, dy, deltaT * 180 / Math.PI);
+      
       // this ensures that the odometer only runs once every period
       updateEnd = System.currentTimeMillis();
       if (updateEnd - updateStart < ODOMETER_PERIOD) {
