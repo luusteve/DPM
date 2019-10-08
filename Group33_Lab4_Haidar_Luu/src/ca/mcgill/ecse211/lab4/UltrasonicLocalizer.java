@@ -1,95 +1,133 @@
 package ca.mcgill.ecse211.lab4;
 
 import static ca.mcgill.ecse211.lab4.Resources.*;
+import lejos.hardware.Button;
+import lejos.hardware.Sound;
 import lejos.hardware.sensor.EV3UltrasonicSensor;
 import lejos.robotics.SampleProvider;
 
-public class UltrasonicLocalizer extends Thread {
+/**
+ * Given that the system is placed along an
+ * imaginary 45 degree line between (0,0) and (1,1)
+ * reorient the system facing NORTH
+ * 
+ * @author Steven
+ * @author Hassan
+ *
+ */
+
+public class UltrasonicLocalizer {
 
   private final int type;
   private float[] usData;
   SampleProvider distance;
   private final EV3UltrasonicSensor us;
+  private static int wallDistance = 30;
+  private static int noiseMargin = 1;
   int filterControl;
-  double angle1, angle2;
+  double angle1, angle2, dAngle;
 
 
-  public void run() {
-    localize();
-  }
-
-  public UltrasonicLocalizer(int type ,EV3UltrasonicSensor us) {
+  public UltrasonicLocalizer(int type, EV3UltrasonicSensor us) {
     this.type = type;
     this.us = us;
     this.distance = distance;
   }
 
 
-
+/**
+ * 
+ */
   public void localize() {
-
-    leftMotor.setSpeed(ROTATE_SPEED);
-    rightMotor.setSpeed(ROTATE_SPEED);
-     if (type == 0) {
-     fallingEdge();
-     }
-     else if (type == 1) {
-     risingEdge();
-     }
-  }
-
-  public void fallingEdge() {
-    while (Main.UP.getDistance() < 43) {
-      leftMotor.forward();
-      rightMotor.backward();
-    }
-    while (Main.UP.getDistance() > 37) {
-      leftMotor.forward();
-      rightMotor.backward();
-    }
-    angle1 = odometer.getXYT()[2];
-
-    while (Main.UP.getDistance() < 43) {
-      leftMotor.backward();
-      rightMotor.forward();
-    }
-    while (Main.UP.getDistance() > 37) {
-      leftMotor.backward();
-      rightMotor.forward();
-    }
+    //initialize motors
     leftMotor.stop(true);
     rightMotor.stop(true);
-    
-    angle2 = odometer.getXYT()[2];
-    
-    double avgAngle;
+    leftMotor.setAcceleration(ACCELERATION);
+    rightMotor.setAcceleration(ACCELERATION);
+    leftMotor.setSpeed(ROTATE_SPEED);
+    rightMotor.setSpeed(ROTATE_SPEED);
+    if (type == 0) {
+      fallingEdge();
+    } else if (type == 1) {
+      risingEdge();
+    }
+    //wraparound 359 degree to 0 degree
     if (angle1 > angle2) {
-      angle1 = 225 - (angle1 + angle2)/2;
-      avgAngle = 45 - (angle1 + angle2) / 2;
+      dAngle = 45 - (angle1 + angle2) / 2;
+      Sound.beep();
+    } else if (angle1 < angle2) {
+      dAngle = 225 - (angle1 + angle2) / 2;
+      Sound.buzz();
+    } else
+      dAngle = angle1 + angle2 / 2;
+    //update current odometer angle
+    odometer.update(0, 0, dAngle);
+    navigate.turnTo(0);
+    Button.waitForAnyPress();
+  }
+  
+  /**
+   * Record angle and switch direction when wall is detected
+   * Initializes robot to start facing the void
+   */
+  public void fallingEdge() {
+    // turn the system until the sensor observes nothing 
+    while (Main.UP.getDistance() < wallDistance + noiseMargin) {
+      leftMotor.forward();
+      rightMotor.backward();
     }
-    else avgAngle = 255 - (angle1 + angle2)/2;
-    
-    double ZeroPoint = angle1 - avgAngle + 45;
-    odometer.setXYT(ZeroPoint % TILE_SIZE, ZeroPoint % TILE_SIZE, avgAngle);
-    navigate.travelTo(1,1);
+    //turn the system until it sees the back wall
+    while (Main.UP.getDistance() > wallDistance - noiseMargin) {
+      leftMotor.forward();
+      rightMotor.backward();
+    }
+    //angle at which the sensor sees the back wall
+    angle1 = odometer.getXYT()[2];
+    //turn the system in the opposite direction until the sensor does not see the wall
+    while (Main.UP.getDistance() < wallDistance + noiseMargin) {
+      leftMotor.backward();
+      rightMotor.forward();
+    }
+    // turn the system until it sees the left wall 
+    while (Main.UP.getDistance() > wallDistance - noiseMargin) {
+      leftMotor.backward();
+      rightMotor.forward();
+    }
+    //angle at which the sensor sees the wall  
+    angle2 = odometer.getXYT()[2];
+    leftMotor.stop(true);
+    rightMotor.stop(true);
   }
 
+/**
+ * Record angle and switch direction when the sensor detects the
+ * transition between wall and nothing
+ * Initializes robot to start facing the wall
+ */
   public void risingEdge() {
-
-  }
-
-  public float filter(float dist) {
-    if (dist > 50 && filterControl < FILTER_OUT) {
-      // bad value, do not set the distance var, however do increment the filter value
-      filterControl++;
-      return 100;
-    } else if (dist >= 50) {
-      // Repeated large values, so there is nothing there: leave the distance alone
-      return 50;
-    } else {
-      // distance went below 50: reset filter and leave distance alone.
-      filterControl = 0;
-      return dist;
+    // turn the system until the sensor observes the left wall 
+    while (Main.UP.getDistance() > wallDistance - noiseMargin) {
+      leftMotor.backward();
+      rightMotor.forward();
     }
+    //turn the system until it sees the nothing
+    while (Main.UP.getDistance() < wallDistance + noiseMargin) {
+      leftMotor.backward();
+      rightMotor.forward();
+    }
+    angle1 = odometer.getXYT()[2];
+    // turn the system until the sensor observes the back wall 
+    while (Main.UP.getDistance() > wallDistance - noiseMargin) {
+      leftMotor.forward();
+      rightMotor.backward();
+    }
+    //turn the system until it sees the nothing
+    while (Main.UP.getDistance() < wallDistance + noiseMargin) {
+      leftMotor.forward();
+      rightMotor.backward();
+    }
+    angle2 = odometer.getXYT()[2];
+    leftMotor.stop(true);
+    rightMotor.stop(true);
   }
 }

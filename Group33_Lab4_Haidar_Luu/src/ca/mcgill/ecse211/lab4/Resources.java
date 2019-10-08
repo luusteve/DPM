@@ -40,7 +40,7 @@ public class Resources {
    * The robot width in centimeters.
    */
   // public static final double TRACK = 11.45;
-  public static final double TRACK = 11.55;
+  public static final double TRACK = 9.85;
 
 
   /**
@@ -66,12 +66,12 @@ public class Resources {
   /**
    * The speed at which the robot rotates in degrees per second.
    */
-  public static final int ROTATE_SPEED = 150;
+  public static final int ROTATE_SPEED = 75;
 
   /**
    * The motor acceleration in degrees per second squared.
    */
-  public static final int ACCELERATION = 3000;
+  public static final int ACCELERATION = 1000;
 
   /**
    * Timeout period in milliseconds.
@@ -101,8 +101,7 @@ public class Resources {
   /**
    * The color sensor.
    */
-  public static final EV3ColorSensor colorSensor = new EV3ColorSensor(LocalEV3.get().getPort("S1"));
-
+  public static final EV3ColorSensor colorSensor = new EV3ColorSensor(SensorPort.S1);
 
   /**
    * The LCD.

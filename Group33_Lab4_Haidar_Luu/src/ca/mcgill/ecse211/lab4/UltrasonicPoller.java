@@ -15,7 +15,7 @@ import lejos.robotics.SampleProvider;
 public class UltrasonicPoller {
   private float[] sampleUS;
   SampleProvider distance;
-  double wallDistance;
+  int wallDistance;
   
   public UltrasonicPoller(SampleProvider distance, float[] sampleUS) {
     this.distance = distance;
@@ -23,17 +23,19 @@ public class UltrasonicPoller {
   }
   
   /**
-
+   * 
+   * @return float distance in cm
    */
   public float getDistance(){
     distance.fetchSample(sampleUS, 0);
+    wallDistance = (int) (sampleUS[0] * 100.0); // extract from buffer, convert to cm, cast to int
     try {
         Thread.sleep(50);
     } catch (InterruptedException e) {}
     if(sampleUS[0]>255){
-        sampleUS[0]=255;
+        wallDistance = 255;
     }
-    return sampleUS[0];
+    return wallDistance;
 }
 
  

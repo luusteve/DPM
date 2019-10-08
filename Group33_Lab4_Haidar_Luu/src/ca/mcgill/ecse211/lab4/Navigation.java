@@ -75,11 +75,9 @@ public class Navigation{
     // minimal angle
     angle = angle % 360;
     if (angle > 180) {
-      Sound.beep();
       leftMotor.rotate(-convertAngle(360 - angle), true);
       rightMotor.rotate(convertAngle(360 - angle), false);
     } else {
-      Sound.buzz();
       leftMotor.rotate(convertAngle(angle), true);
       rightMotor.rotate(-convertAngle(angle), false);
     }
